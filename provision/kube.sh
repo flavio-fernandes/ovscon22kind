@@ -2,11 +2,18 @@
 
 [ $EUID -eq 0 ] && { echo 'must not be root' >&2; exit 1; }
 
-# https://hidetatz.medium.com/colorize-kubectl-output-by-kubecolor-2c222af3163a
-go install github.com/kubecolor/kubecolor/cmd/kubecolor@latest
+set -o errexit
+set -o xtrace
 
 CONFIG="/home/vagrant/.bashrc.d/k8.sh"
-mkdir -p $(dirname $CONFIG)
+
+[ -e ${CONFIG} ] && { echo "${CONFIG} already created"; exit 0; }
+
+# https://hidetatz.medium.com/colorize-kubectl-output-by-kubecolor-2c222af3163a
+. /home/vagrant/.bashrc.d/golang.sh
+go install github.com/kubecolor/kubecolor/cmd/kubecolor@latest
+
+mkdir -pv $(dirname $CONFIG)
 cat << EOT > $CONFIG
 if ! [[ "\$PATH" =~ "/home/vagrant/go/bin:" ]]
 then

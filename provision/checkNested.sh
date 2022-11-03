@@ -3,8 +3,8 @@
 
 [ $EUID -eq 0 ] || { echo 'must be root' >&2; exit 1; }
 
-# set -o xtrace
 set -o errexit
+# set -o xtrace
 
 [ -e /dev/kvm ] || { echo "PROBLEM, you need to ensure hv can nest"; exit 1; }
 grep -q Y /sys/module/kvm_intel/parameters/nested || {

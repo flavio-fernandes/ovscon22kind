@@ -2,6 +2,9 @@
 
 [ $EUID -eq 0 ] && { echo 'must not be root' >&2; exit 1; }
 
+set -o errexit
+# set -o xtrace
+
 sudo dnf install -y docker
 systemctl is-active --quiet docker || {
     sudo usermod -a -G docker $(whoami)

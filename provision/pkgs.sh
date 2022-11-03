@@ -2,8 +2,8 @@
 
 [ $EUID -eq 0 ] || { echo 'must be root' >&2; exit 1; }
 
-set -o xtrace
-##set -o errexit
+set -o errexit
+# set -o xtrace
 
 dnf install -y vim emacs-nox tmux curl wget tmate bat pip dnsutils make patch git jq bash-completion kubernetes-client
 dnf groupinstall -y "Development Tools"
@@ -37,5 +37,3 @@ EOT
     chown vagrant:vagrant /home/vagrant/.vimrc
 }
 
-
-echo ok

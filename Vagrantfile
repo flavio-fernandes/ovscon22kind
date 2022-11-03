@@ -2,68 +2,83 @@
 # vi: set ft=ruby :
 
 NUM_VMS = (ENV['VMS'] || 1).to_i
-RAM = 4096
-VCPUS = 2
-#RAM = 16384
-#VCPUS = 4
-#RAM = 49152
-#VCPUS = 6
+RAM = 5120
+VCPUS = 4
+
+$rm_eth0_route = <<SCRIPT
+cat << EOT > /etc/systemd/system/rmeth0route.service
+[Unit]
+Description=Remove default route via eth0
+After=network.target
+
+[Service]
+User=root
+ExecStart=/bin/bash -c "echo Remove default route via eth0 - start && while : ; do ip route del default dev eth0 ||: ; sleep 60 ; done"
+ExecStop=/bin/bash -c "cho Remove default route via eth0 - stop"
+
+[Install]
+WantedBy=multi-user.target
+EOT
+
+systemctl daemon-reload
+systemctl enable rmeth0route --now
+SCRIPT
 
 Vagrant.configure("2") do |config|
   vm_memory = ENV['VM_MEMORY'] || RAM
   vm_cpus = ENV['VM_CPUS'] || VCPUS
 
   config.vm.box = "fedora/36-cloud-base"
-  config.vm.provider "libvirt" do |provider|
-    provider.cpus = vm_cpus
-    provider.memory = vm_memory
-    provider.nested = true
+
+  # libvirt
+  config.vm.network "public_network",
+                   :dev => "bridge0",
+                   :mode => "bridge",
+                   :type => "bridge",
+                   use_dhcp_assigned_default_route: true
+  config.vm.provider "libvirt" do |lv, override|
+    lv.cpus = vm_cpus
+    lv.memory = vm_memory
+    lv.nested = true
   end
-  config.vm.provider "virtualbox" do |vb|
+
+  # virtualbox
+  # config.vm.network "public_network",
+  #                   bridge: "en0: Ethernet",
+  #                   use_dhcp_assigned_default_route: true
+  config.vm.provider "virtualbox" do |vb, override|
     vb.cpus = vm_cpus
     vb.memory = vm_memory
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
   end
-  
+
   (1..NUM_VMS).each do |i|
       config.vm.define "ovscon#{i}" do |node|
         node.vm.hostname = "ovscon#{i}"
-        node.vm.synced_folder ".", "/vagrant", type: "sshfs"
+        # node.vm.synced_folder ".", "/vagrant", type: "sshfs"
 
         node.vm.provision :shell do |shell|
           shell.privileged = true
           shell.path = 'provision/checkNested.sh'
         end
       
-        node.vm.provision :shell do |shell|
-          shell.privileged = true
-          shell.path = 'provision/pkgs.sh'
-        end
-        
-        node.vm.provision :shell do |shell|
-          shell.privileged = true
-          shell.path = 'provision/golang.sh'
-        end
-        
+        # delete default gw on eth0
+        node.vm.provision "shell",
+        inline: "nmcli connection modify 'Wired connection 1' ipv4.never-default yes ||:"
+
+        node.vm.provision "shell",
+        run: "always",
+        inline: "ip route del default dev eth0 ||:"
+
         node.vm.provision :shell do |shell|
           shell.privileged = false
-          shell.path = 'provision/docker.sh'
+          shell.path = 'provision/setup.sh'
         end
-        
-        node.vm.provision :shell do |shell|
-          shell.privileged = true
-          shell.path = 'provision/kind.sh'
-        end
-        
-        node.vm.provision :shell do |shell|
-          shell.privileged = false
-          shell.path = 'provision/kube.sh'
-        end
-        
-        node.vm.provision :shell do |shell|
-          shell.privileged = false
-          shell.path = 'provision/ovnk8.sh'
-        end
+
+        node.vm.provision "rm_eth0_route", type: "shell",
+                           inline: $rm_eth0_route
+
     end
       
   end
