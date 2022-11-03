@@ -31,11 +31,11 @@ Vagrant.configure("2") do |config|
   config.vm.box = "fedora/36-cloud-base"
 
   # libvirt
-  config.vm.network "public_network",
-                   :dev => "bridge0",
-                   :mode => "bridge",
-                   :type => "bridge",
-                   use_dhcp_assigned_default_route: true
+  # config.vm.network "public_network",
+  #                  :dev => "bridge0",
+  #                  :mode => "bridge",
+  #                  :type => "bridge",
+  #                  use_dhcp_assigned_default_route: true
   config.vm.provider "libvirt" do |lv, override|
     lv.cpus = vm_cpus
     lv.memory = vm_memory
@@ -43,9 +43,9 @@ Vagrant.configure("2") do |config|
   end
 
   # virtualbox
-  # config.vm.network "public_network",
-  #                   bridge: "en0: Ethernet",
-  #                   use_dhcp_assigned_default_route: true
+  config.vm.network "public_network",
+                    bridge: "en0: Ethernet",
+                    use_dhcp_assigned_default_route: true
   config.vm.provider "virtualbox" do |vb, override|
     vb.cpus = vm_cpus
     vb.memory = vm_memory
@@ -53,7 +53,8 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
   end
 
-  (1..NUM_VMS).each do |i|
+  # (1..NUM_VMS).each do |i|
+  (26..NUM_VMS + 25).each do |i|
       config.vm.define "ovscon#{i}" do |node|
         node.vm.hostname = "ovscon#{i}"
         # node.vm.synced_folder ".", "/vagrant", type: "sshfs"
