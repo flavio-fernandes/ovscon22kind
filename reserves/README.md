@@ -14,7 +14,6 @@ $ # create pip environment
   pip install --upgrade pip
 
 $ # install deps
-  for x in $(cat bindep.txt); do echo $x ; sudo dnf install -y $x ; done ; \
   pip install -r requirements.txt
 
 $ # before starting the app, ensure that key.txt and db.ini are available
@@ -44,4 +43,14 @@ $ # ssh connect
 
 $ # un-reserving ...
   curl -X DELETE http://${RESERVES}/vm/email@example.com
+```
+
+### Forwarding to port 8888
+
+A little trick we can use in order to keep Flask app running on non-reserved ports,
+yet connecting to it from such. [socat](https://www.cyberciti.biz/faq/linux-unix-tcp-port-forwarding/)!
+
+```bash
+$ sudo dnf -y install socat
+$ sudo socat TCP-LISTEN:80,fork TCP:127.0.0.1:8888    
 ```

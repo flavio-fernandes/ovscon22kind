@@ -72,8 +72,8 @@ def allocate_vm_for_email(email):
         proc.call(params, shell=False, check_exit_code=True)
         return vm_ip, None
 
-    msg = "Sorry, no more vms available.\nFancy spawing one manually?!?\n"
-    msg += "Check https://github.com/flavio-fernandes/ovscon22kind for info."
+    msg = "Sorry, no vms available.\nFancy spawing one manually?!?\n"
+    msg += "Check https://github.com/flavio-fernandes/ovscon22kind/blob/main/docs/provisioning.md for info."
     return None, msg
 
 
