@@ -1,0 +1,5 @@
+.env
+db.ini
+key.txt
+__pycache__
+app/__pycache__
