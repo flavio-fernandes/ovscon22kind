@@ -141,7 +141,7 @@ dnf install -y vagrant
 ## create non-root user
 
 ```bash
-[root@baremetal ~]# groupadd  ff && \
+[root@baremetal ~]# groupadd ff && \
 useradd --gid ff --groups ff,users,libvirt,adm --shell /bin/bash  -c "flaviof devel" --create-home ff
 
 cat <<EOT >> /etc/sudoers.d/90-ff
