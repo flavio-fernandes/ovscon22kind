@@ -65,7 +65,10 @@ Create a 4Gb+ fedora-36 VM using your favorite method and run the steps
 
 # Part 2: Deploy kind with OVN-Kubernetes CNI
 
-Deploy kind cluster!
+### Deploy kind cluster!
+
+- [https://kind.sigs.k8s.io/](https://kind.sigs.k8s.io/) is a tool for running local Kubernetes clusters using Docker container "nodes"
+
 ```bash
 [vagrant@ovscon  contrib]$ tmux a || tmux
     
@@ -102,6 +105,9 @@ ovn-worker2         Ready    <none>          11h   v1.24.0   172.18.0.2    <none
 
 ```bash
 [vagrant@ovscon ~]$ podman exec -it ovn-control-plane bash
+    
+# Configs related to CNI
+
 root@ovn-control-plane:/# cd /etc/cni/net.d/
 root@ovn-control-plane:/etc/cni/net.d# ls
 10-ovn-kubernetes.conf
@@ -111,6 +117,34 @@ root@ovn-control-plane:/etc/cni/net.d# cat 10-ovn-kubernetes.conf
 root@ovn-control-plane:/etc/cni/net.d# cd /opt/cni/bin/
 root@ovn-control-plane:/opt/cni/bin# ls
 host-local  loopback  ovn-k8s-cni-overlay  portmap  ptp
+
+root@ovn-control-plane:/# crictl ps
+CONTAINER           IMAGE               CREATED             STATE               NAME                      ATTEMPT             POD ID              POD
+56dfd7e8d98da       569771b1ac2bb       21 hours ago        Running             ovs-metrics-exporter      0                   b2f5197af97ed       ovnkube-node-cll98
+ccd8b33e26f35       569771b1ac2bb       21 hours ago        Running             ovn-controller            0                   b2f5197af97ed       ovnkube-node-cll98
+78baa910df1e4       569771b1ac2bb       21 hours ago        Running             ovnkube-node              0                   b2f5197af97ed       ovnkube-node-cll98
+c0b431a3314c6       95a28f5a2920c       21 hours ago        Running             ovnkube-master            0                   eec46330aaaac       ovnkube-master-5b5ddf8879-sfqfz
+d9c49c8dd7a1c       95a28f5a2920c       21 hours ago        Running             ovn-northd                0                   eec46330aaaac       ovnkube-master-5b5ddf8879-sfqfz
+8e6f725012e70       95a28f5a2920c       21 hours ago        Running             ovs-daemons               0                   5714f66558c9e       ovs-node-tlmfh
+82da3df2e4dad       95a28f5a2920c       21 hours ago        Running             sb-ovsdb                  0                   6c996fbb5f767       ovnkube-db-5c6757846-xscdh
+47501de2cbf63       95a28f5a2920c       21 hours ago        Running             nb-ovsdb                  0                   6c996fbb5f767       ovnkube-db-5c6757846-xscdh
+2fb8da5e484fa       aebe758cef4cd       21 hours ago        Running             etcd                      0                   fe48c15b89202       etcd-ovn-control-plane
+33848b1f3664e       e5bf61ecfdbae       21 hours ago        Running             kube-controller-manager   0                   4e92c95e1fa9d       kube-controller-manager-ovn-control-plane
+292bdf0cc751a       990c40faa794f       21 hours ago        Running             kube-apiserver            0                   ceb47941d732b       kube-apiserver-ovn-control-plane
+40009c827947f       a4e98cc26ed1b       21 hours ago        Running             kube-scheduler            0                   a158b897b92c7       kube-scheduler-ovn-control-plane
+root@ovn-control-plane:/# exit
+
+[vagrant@ovscon ~]$ podman exec -it ovn-worker bash
+root@ovn-worker:/# crictl ps
+CONTAINER           IMAGE               CREATED             STATE               NAME                     ATTEMPT             POD ID              POD
+4e5ace22c1a0a       569771b1ac2bb       21 hours ago        Running             ovs-metrics-exporter     0                   fe98b394c7106       ovnkube-node-ngjwh
+7e3b7d338a951       569771b1ac2bb       21 hours ago        Running             ovn-controller           0                   fe98b394c7106       ovnkube-node-ngjwh
+a2afc14081cd4       569771b1ac2bb       21 hours ago        Running             ovnkube-node             0                   fe98b394c7106       ovnkube-node-ngjwh
+b11dbd01cf616       4c1e997385b8f       21 hours ago        Running             local-path-provisioner   0                   2b069e54f0dbb       local-path-provisioner-9cd9bd544-mpfnd
+e01bdaf44aa36       a4ca41631cc7a       21 hours ago        Running             coredns                  0                   02434b78ebef3       coredns-6d4b75cb6d-z5kpn
+5aae6a31ab3f3       a4ca41631cc7a       21 hours ago        Running             coredns                  0                   9ca7e36ce6a65       coredns-6d4b75cb6d-smp7z
+03f4ba59a5773       95a28f5a2920c       21 hours ago        Running             ovs-daemons              0                   04797453fb85f       ovs-node-g77l8
+root@ovn-worker:/# exit
 ```
 
 ![ovnk8-node-side](../images/ovnk8-cni-side.png "OVN-Kubernetes Node")
@@ -122,8 +156,6 @@ host-local  loopback  ovn-k8s-cni-overlay  portmap  ptp
 An OVSDB Library written in Go
     
 ### 2.a) A few notes on what has happened up to here
-
-- [https://kind.sigs.k8s.io/](https://kind.sigs.k8s.io/) is a tool for running local Kubernetes clusters using Docker container "nodes"
 
 ```bash
 [vagrant@ovscon ~]$ NS=$(podman inspect --format {{.State.Pid}} ovn-control-plane) ; \
@@ -177,7 +209,41 @@ ovs-node-85mxf                    ovn-worker2         <===
                     grep ovn-control-plane | grep ovs-node- | cut -d' ' -f1) ; echo $POD
 ovs-node-dvml9
 
-# what ovs sees as bridges and ports
+# what ovs sees as bridges and ports on each one of the nodes
+
+# breth0 is used by ovnkube-node to populate Kubernetes specific rules for
+# handling north / south datapath. It needs to take into account that certain packets
+# are handled by the host and others are handled at br-int; while using the host's ip address.
+
+# The code in ovnkube-node that handles that [lives here](https://github.com/ovn-org/ovn-kubernetes/blob/e9bdbec7e7615b278793163252e9fe9ed877034e/go-controller/pkg/node/gateway_localnet.go#L21).
+
+[vagrant@ovscon ~]$ k exec -n ovn-kubernetes -c ovs-daemons $POD -- ovs-ofctl --names dump-flows breth0 | cut -d',' -f3-
+ table=0, n_packets=0, n_bytes=0, priority=500,ip,in_port="patch-breth0_ov",nw_src=172.18.0.2,nw_dst=169.254.169.2 actions=ct(commit,table=4,zone=64001,nat(dst=172.18.0.2))
+ table=0, n_packets=0, n_bytes=0, priority=500,ip,in_port=LOCAL,nw_dst=169.254.169.1 actions=ct(table=5,zone=64002,nat)
+ table=0, n_packets=0, n_bytes=0, priority=500,ip,in_port=LOCAL,nw_dst=10.96.0.0/16 actions=ct(commit,table=2,zone=64001,nat(src=169.254.169.2))
+ table=0, n_packets=0, n_bytes=0, priority=500,ip,in_port="patch-breth0_ov",nw_src=10.96.0.0/16,nw_dst=169.254.169.2 actions=ct(table=3,zone=64001,nat)
+ table=0, n_packets=0, n_bytes=0, priority=205,udp,in_port=eth0,dl_dst=02:42:ac:12:00:02,tp_dst=6081 actions=LOCAL
+ table=0, n_packets=0, n_bytes=0, priority=200,udp,in_port=eth0,tp_dst=6081 actions=NORMAL
+ table=0, n_packets=0, n_bytes=0, priority=200,udp,in_port=LOCAL,tp_dst=6081 actions=output:eth0
+ table=0, n_packets=0, n_bytes=0, priority=100,ip,in_port="patch-breth0_ov" actions=ct(commit,zone=64000,exec(load:0x1->NXM_NX_CT_MARK[])),output:eth0
+ table=0, n_packets=72694, n_bytes=44723358, priority=100,ip,in_port=LOCAL actions=ct(commit,zone=64000,exec(load:0x2->NXM_NX_CT_MARK[])),output:eth0
+ table=0, n_packets=83272, n_bytes=8388111, priority=50,ip,in_port=eth0 actions=ct(table=1,zone=64000)
+ table=0, n_packets=195796, n_bytes=26968782, priority=10,in_port=eth0,dl_dst=02:42:ac:12:00:02 actions=output:"patch-breth0_ov",LOCAL
+ table=0, n_packets=173920, n_bytes=111810590, priority=0 actions=NORMAL
+ table=1, n_packets=0, n_bytes=0, priority=100,ct_state=+est+trk,ct_mark=0x1,ip actions=check_pkt_larger(1414)->NXM_NX_REG0[0],resubmit(,11)
+ table=1, n_packets=83102, n_bytes=8363790, priority=100,ct_state=+est+trk,ct_mark=0x2,ip actions=LOCAL
+ table=1, n_packets=0, n_bytes=0, priority=100,ct_state=+rel+trk,ct_mark=0x1,ip actions=check_pkt_larger(1414)->NXM_NX_REG0[0],resubmit(,11)
+ table=1, n_packets=0, n_bytes=0, priority=100,ct_state=+rel+trk,ct_mark=0x2,ip actions=LOCAL
+ table=1, n_packets=0, n_bytes=0, priority=13,udp,in_port=eth0,tp_dst=3784 actions=output:"patch-breth0_ov",LOCAL
+ table=1, n_packets=153, n_bytes=22702, priority=10,dl_dst=02:42:ac:12:00:02 actions=LOCAL
+ table=1, n_packets=0, n_bytes=0, priority=0 actions=NORMAL
+ table=2, n_packets=0, n_bytes=0, actions=mod_dl_dst:02:42:ac:12:00:02,output:"patch-breth0_ov"
+ table=3, n_packets=0, n_bytes=0, actions=move:NXM_OF_ETH_DST[]->NXM_OF_ETH_SRC[],mod_dl_dst:02:42:ac:12:00:02,LOCAL
+ table=4, n_packets=0, n_bytes=0, ip actions=ct(commit,table=3,zone=64002,nat(src=169.254.169.1))
+ table=5, n_packets=0, n_bytes=0, ip actions=ct(commit,table=2,zone=64001,nat)
+ table=11, n_packets=0, n_bytes=0, priority=10,reg0=0x1 actions=LOCAL
+ table=11, n_packets=0, n_bytes=0, priority=1 actions=output:"patch-breth0_ov"
+    
 [vagrant@ovscon ~]$ k exec -n ovn-kubernetes -c ovs-daemons $POD -- ovs-vsctl show
 428f3585-3a82-4ab8-ba28-8bf87e16551e
     Bridge br-int
@@ -451,11 +517,16 @@ external_ids        : {attached_mac="0a:58:0a:f4:00:07", iface-id=default_bbox, 
 ```
 
 ## 3.3) Create a service
+Explain the concept of a nodeport service and how OVN needs to create multiple load balancers to handle packets coming to the dedicated port at either worker node.
+    
+Also a good opportunity to mention that while sercvices 'vip' is long lived, the endpoints behind them can be very short lived.
+A lot of awesome work has been done -- and more on the works -- by the OVN core team to acomodate this requirement.
+Thanks [Dumitru](https://github.com/dceara) et all!!!
 
 ```bash
 # Tell k8 that the port 8080 on bbox pod should be reachable from external traffic to a port on the nodes.
-[vagrant@ovscon ~]$ kubectl expose pod bbox --port 8080 --type=NodePort
 
+[vagrant@ovscon ~]$ kubectl expose pod bbox --port 8080 --type=NodePort
 
 [vagrant@ovscon ~]$ k describe svc bbox
 Name:                     bbox
