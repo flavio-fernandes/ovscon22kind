@@ -14,7 +14,7 @@ After=network.target
 [Service]
 User=root
 ExecStart=/bin/bash -c "echo Remove default route via eth0 - start && while : ; do ip route del default dev eth0 ||: ; sleep 60 ; done"
-ExecStop=/bin/bash -c "cho Remove default route via eth0 - stop"
+ExecStop=/bin/bash -c "echo Remove default route via eth0 - stop"
 
 [Install]
 WantedBy=multi-user.target
