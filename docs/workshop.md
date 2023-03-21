@@ -54,7 +54,7 @@ $ git clone https://github.com/flavio-fernandes/ovscon22kind.git && \
 
 ### 1.3) Get your own Fedora VM
     
-Create a 4Gb+ fedora-36 VM using your favorite method and run the steps
+Create a 4Gb+ fedora-36 VM (or newer) using your favorite method and run the steps
 [described in this doc](https://github.com/flavio-fernandes/ovscon22kind/blob/main/docs/provisioning.md).
 
 ### 1.a) A few quick notes on what was done up to here

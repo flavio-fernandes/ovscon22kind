@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
   vm_memory = ENV['VM_MEMORY'] || RAM
   vm_cpus = ENV['VM_CPUS'] || VCPUS
 
-  config.vm.box = "fedora/36-cloud-base"
+  config.vm.box = "fedora/37-cloud-base"
 
   # libvirt
   config.vm.provider "libvirt" do |lv, override|
@@ -31,10 +31,10 @@ Vagrant.configure("2") do |config|
         node.vm.hostname = "ovscon#{i}"
         # node.vm.synced_folder ".", "/vagrant", type: "sshfs"
 
-        node.vm.provision :shell do |shell|
-          shell.privileged = true
-          shell.path = 'provision/checkNested.sh'
-        end
+        # node.vm.provision :shell do |shell|
+        #   shell.privileged = true
+        #   shell.path = 'provision/checkNested.sh'
+        # end
       
         node.vm.provision :shell do |shell|
           shell.privileged = false

@@ -1,10 +1,10 @@
 
 This document shows the steps used for preparing a vm to use with this workshop.
 If VM was deployed using Vagrant method, there is nothing to see here; this
-is intended for cases where we have a brand new Fedora 36 VM running and
+is intended for cases where we have a brand new Fedora 37 VM running and
 need to run the steps Vagrant provisioning would have performed.
 
-ssh into a VM running Fedora 36. It should have 4Gb+ RAM and ~20Gb disk.
+ssh into a VM running Fedora 37. It should have 4Gb+ RAM and ~20Gb disk.
 
 ```bash
 $ ssh root@${FEDORA_VM_IP}

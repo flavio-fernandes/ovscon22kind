@@ -3,7 +3,7 @@ This document shows the steps used for preparing a lab server to host multiple
 vms used as the basis for this workshop. It is a bit outside the context of the talk
 itself but may be interesting for preparing for similar events.
 
-The objective here is to have a Fedora 36 system using a bridge interface,
+The objective here is to have a Fedora 37 system using a bridge interface,
 so vms can connect to the network just like the host server does. It also
 installs Vagrant, so the provisioning of these vms can be automated.
 
@@ -24,7 +24,7 @@ Fedora has that partition mounted using [btrfs subvolume](https://ask.fedoraproj
 root
 
 [root@baremetal ~]# head -1 /etc/redhat-release
-Fedora release 36 (Thirty Six)
+Fedora release 37 (Thirty Seven)
         
 [root@baremetal ~]# umount /home
 

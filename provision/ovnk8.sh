@@ -21,6 +21,6 @@ cat /vagrant/0001-use-quay.patch | git am
 
 # https://superuser.com/questions/272061/reload-a-linux-users-group-assignments-without-logging-out
 # newgrp $USER ||:
-sudo docker pull quay.io/ffernand/kindest-node:v1.24.0
-sudo docker pull quay.io/ffernand/fedora:36
+sudo docker pull quay.io/ffernand/kindest-node:v1.26.0
+sudo docker pull quay.io/ffernand/fedora:37
 sudo docker pull quay.io/ffernand/busybox:latest
