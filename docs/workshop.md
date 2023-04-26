@@ -9,6 +9,8 @@ a Linux shell session to follow along.
 
 Please join me, and interrupt at any time!
 
+**Note:** A recording of this workshop [is available here](https://www.youtube.com/watch?v=LjAzW8C1VAU).
+
 # Part 1: Getting a VM to experiment
         
 There are 3 choices for this:

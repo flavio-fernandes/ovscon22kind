@@ -7,6 +7,8 @@ This repo has all the bits used for the [**Easily deploying Kubernetes with OVN 
 
 ![ovscon2022](images/ovscon2022.png "OVScon, November 2022")
 
+**Note:** A recording of this workshop [is available here](https://www.youtube.com/watch?v=LjAzW8C1VAU).
+
 ## Pre-Reqs
 
 - install Vagrant
