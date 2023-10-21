@@ -7,7 +7,7 @@ set -o xtrace
 
 [ -e /usr/local/go ] && { echo "golang already installed"; exit 0; }
 
-version="$(curl -L 'https://golang.org/VERSION?m=text')"
+version="$(curl -L 'https://golang.org/VERSION?m=text' | head -1)"
 
 wget "https://dl.google.com/go/${version}.linux-amd64.tar.gz"
 rm -rf /usr/local/go && tar -C /usr/local -xzf ${version}.linux-amd64.tar.gz

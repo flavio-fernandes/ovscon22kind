@@ -1,6 +1,6 @@
-From 151575ed86beaaf523da3971e49747e9747ac8ba Mon Sep 17 00:00:00 2001
+From d58618b2c3198fb9e17539eb768eb37a98cfe842 Mon Sep 17 00:00:00 2001
 From: vagrant user <vagrant@example.com>
-Date: Tue, 21 Mar 2023 16:09:05 +0000
+Date: Sat, 21 Oct 2023 02:59:22 +0000
 Subject: [PATCH] use quay
 
 ---
@@ -10,53 +10,53 @@ Subject: [PATCH] use quay
  3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/contrib/kind.sh b/contrib/kind.sh
-index f76ce31..c8e3846 100755
+index cf5c50f..4540dac 100755
 --- a/contrib/kind.sh
 +++ b/contrib/kind.sh
-@@ -460,7 +460,7 @@ set_default_params() {
+@@ -522,7 +522,7 @@ set_default_params() {
      MANIFEST_OUTPUT_DIR="${DIR}/../dist/yaml/${KIND_CLUSTER_NAME}"
    fi
    RUN_IN_CONTAINER=${RUN_IN_CONTAINER:-false}
 -  KIND_IMAGE=${KIND_IMAGE:-kindest/node}
 +  KIND_IMAGE=${KIND_IMAGE:-quay.io/ffernand/kindest-node}
-   K8S_VERSION=${K8S_VERSION:-v1.26.0}
+   K8S_VERSION=${K8S_VERSION:-v1.26.3}
    OVN_GATEWAY_MODE=${OVN_GATEWAY_MODE:-shared}
    KIND_INSTALL_INGRESS=${KIND_INSTALL_INGRESS:-false}
 diff --git a/dist/images/Dockerfile.fedora b/dist/images/Dockerfile.fedora
-index c14b487..f91213e 100644
+index d069f34..5cc2197 100644
 --- a/dist/images/Dockerfile.fedora
 +++ b/dist/images/Dockerfile.fedora
 @@ -9,7 +9,7 @@
  # are built locally and included in the image (instead of the rpm)
  #
-
+ 
 -FROM fedora:37
 +FROM quay.io/ffernand/fedora:37
-
+ 
  USER root
-
+ 
 diff --git a/dist/images/Dockerfile.fedora.dev b/dist/images/Dockerfile.fedora.dev
-index 9bc930d..9917527 100644
+index e7245c4..1476e39 100644
 --- a/dist/images/Dockerfile.fedora.dev
 +++ b/dist/images/Dockerfile.fedora.dev
 @@ -15,7 +15,7 @@
  # this image in any production environment.
  #
-
--FROM fedora:37 AS ovnbuilder
-+FROM quay.io/ffernand/fedora:37 AS ovnbuilder
-
+ 
+-FROM fedora:38 AS ovnbuilder
++FROM quay.io/ffernand/fedora:38 AS ovnbuilder
+ 
  USER root
-
-@@ -63,7 +63,7 @@ RUN rm rpm/rpmbuild/RPMS/x86_64/*docker*
+ 
+@@ -64,7 +64,7 @@ RUN rm rpm/rpmbuild/RPMS/x86_64/*docker*
  RUN git log -n 1
-
+ 
  # Build the final image
 -FROM fedora:37
 +FROM quay.io/ffernand/fedora:37
-
+ 
  # Install needed dependencies.
  RUN INSTALL_PKGS=" \
---
-2.39.2
+-- 
+2.41.0
 
