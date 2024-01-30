@@ -9,9 +9,10 @@ CONFIG="/home/vagrant/.bashrc.d/k8.sh"
 
 [ -e ${CONFIG} ] && { echo "${CONFIG} already created"; exit 0; }
 
-# https://hidetatz.medium.com/colorize-kubectl-output-by-kubecolor-2c222af3163a
 . /home/vagrant/.bashrc.d/golang.sh
-go install github.com/kubecolor/kubecolor/cmd/kubecolor@latest
+
+# https://hidetatz.medium.com/colorize-kubectl-output-by-kubecolor-2c222af3163a
+go install github.com/hidetatz/kubecolor/cmd/kubecolor@latest
 
 mkdir -pv $(dirname $CONFIG)
 cat << EOT > $CONFIG
