@@ -5,23 +5,19 @@ NUM_VMS = (ENV['VMS'] || 1).to_i
 RAM = 5120
 VCPUS = 4
 
-$rm_eth0_route = <<SCRIPT
-cat << EOT > /etc/systemd/system/rmeth0route.service
-[Unit]
-Description=Remove default route via eth0
-After=network.target
+$tweak_disk = <<SCRIPT
+sgdisk -e /dev/vda
+yes | parted /dev/vda ---pretend-input-tty resizepart 5 100%
+btrfs filesystem resize max /
+SCRIPT
 
-[Service]
-User=root
-ExecStart=/bin/bash -c "echo Remove default route via eth0 - start && while : ; do ip route del default dev eth0 ||: ; sleep 60 ; done"
-ExecStop=/bin/bash -c "echo Remove default route via eth0 - stop"
+$tweak_routes = <<SCRIPT
+nmcli con modify 'Wired connection 2' ipv4.route-metric 50
+nmcli con up 'Wired connection 2'
 
-[Install]
-WantedBy=multi-user.target
-EOT
-
-systemctl daemon-reload
-systemctl enable rmeth0route --now
+nmcli connection modify 'Wired connection 1' ipv4.never-default yes
+nmcli con modify 'Wired connection 1' ipv4.route-metric 200
+nmcli con up 'Wired connection 1'
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -40,6 +36,8 @@ Vagrant.configure("2") do |config|
     lv.cpus = vm_cpus
     lv.memory = vm_memory
     lv.nested = true
+    # Set the primary disk size to 100 GB
+    lv.machine_virtual_size = 100
   end
 
   # virtualbox
@@ -76,9 +74,10 @@ Vagrant.configure("2") do |config|
           shell.path = 'provision/setup.sh'
         end
 
-        node.vm.provision "rm_eth0_route", type: "shell",
-                           inline: $rm_eth0_route
-
+        node.vm.provision "tweak_routes", type: "shell",
+                           inline: $tweak_routes
+        node.vm.provision "tweak_disk", type: "shell",
+                           inline: $tweak_disk
     end
       
   end

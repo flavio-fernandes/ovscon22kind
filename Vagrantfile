@@ -5,6 +5,12 @@ NUM_VMS = (ENV['VMS'] || 1).to_i
 RAM = 5120
 VCPUS = 4
 
+$tweak_disk = <<SCRIPT
+sgdisk -e /dev/vda
+yes | parted /dev/vda ---pretend-input-tty resizepart 5 100%
+btrfs filesystem resize max /
+SCRIPT
+
 Vagrant.configure("2") do |config|
   vm_memory = ENV['VM_MEMORY'] || RAM
   vm_cpus = ENV['VM_CPUS'] || VCPUS
@@ -16,6 +22,8 @@ Vagrant.configure("2") do |config|
     lv.cpus = vm_cpus
     lv.memory = vm_memory
     lv.nested = true
+    # Set the primary disk size to 100 GB
+    lv.machine_virtual_size = 100
   end
 
   # virtualbox
@@ -40,6 +48,9 @@ Vagrant.configure("2") do |config|
           shell.privileged = false
           shell.path = 'provision/setup.sh'
         end
+
+        node.vm.provision "tweak_disk", type: "shell",
+                           inline: $tweak_disk
     end
   end
 end
