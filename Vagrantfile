@@ -34,11 +34,19 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
   end
 
-  (1..NUM_VMS).each do |i|
-      config.vm.define "ovscon#{i}" do |node|
-        node.vm.hostname = "ovscon#{i}"
-        # node.vm.synced_folder ".", "/vagrant", type: "sshfs"
+  
 
+  (1..NUM_VMS).each do |i|
+      config.hostmanager.enabled = true
+      config.hostmanager.manage_host = true
+      config.hostmanager.manage_guest = true
+      config.ssh.forward_agent = true
+      config.vm.define "testflowsvm#{i}" do |node|
+        node.vm.hostname = "testflowsvm"
+        # node.vm.synced_folder ".", "/vagrant", type: "sshfs"
+        node.vm.synced_folder "#{ENV['PWD']}", "/vagrant", type: "nfs", nfs_udp: false, nfs_udp: false
+        node.vm.synced_folder "~/dev", "/home/vagrant/dev", type: "nfs", nfs_udp: false, nfs_udp: false
+      
         # node.vm.provision :shell do |shell|
         #   shell.privileged = true
         #   shell.path = 'provision/checkNested.sh'
